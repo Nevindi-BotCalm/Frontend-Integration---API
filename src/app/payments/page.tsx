@@ -26,7 +26,7 @@
 import { useState, useEffect } from 'react';
 import { columns, User } from './columns';
 import { DataTable } from './data-table';
-import { Users, Database, TrendingUp } from 'lucide-react';
+import { Users, Database } from 'lucide-react';
 
 async function getData(): Promise<User[]> {
   const response = await fetch('https://dummyjson.com/users?limit=208');
@@ -118,7 +118,7 @@ export default function DemoPage() {
             </p>
           </div>
 
-          <div className="p-6">
+          <div className="p-6 px-12">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
