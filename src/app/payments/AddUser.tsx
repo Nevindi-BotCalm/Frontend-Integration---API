@@ -86,6 +86,7 @@
 //     </div>
 //   );
 // }
+
 'use client';
 
 import { useState } from 'react';
@@ -129,16 +130,7 @@ import {
 import { CalendarIcon, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface User {
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  phone: string;
-  isActive: boolean;
-  startDate: string;
-}
-
+{/* Add User Table */}
 export default function AddUserTable() {
   const { users, addUser, updateUser, deleteUser } = useUserStore();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -152,7 +144,7 @@ export default function AddUserTable() {
   const [startDate, setStartDate] = useState<Date>();
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
-
+{/* Add User Dialog */}
   const userSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Please enter a valid email'),
@@ -161,7 +153,7 @@ export default function AddUserTable() {
     phone: z.string().min(10, 'Phone must be at least 10 characters'),
     startDate: z.date(),
   });
-
+{/* Users Table */}
   const handleEdit = (index: number) => {
     const user = users[index];
     setName(user.name);
@@ -185,7 +177,7 @@ export default function AddUserTable() {
       setSuccess('');
       return;
     }
-
+{/* Error handling */}
     try {
       userSchema.parse({
         name,
@@ -227,25 +219,32 @@ export default function AddUserTable() {
     setIsActive(true);
     setStartDate(undefined);
     setError('');
-    setSuccess(editingIndex !== null ? 'User updated successfully!' : 'User added successfully!');
+    setSuccess(
+      editingIndex !== null
+        ? 'User updated successfully!'
+        : 'User added successfully!'
+    );
     setDialogOpen(false);
     closeDialog();
-  };
+  }
 
   return (
     <div className="min-h-screen">
       {/* Add User Dialog */}
       <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6"></div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>Add User</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingIndex !== null ? 'Edit User' : 'Add New User'}</DialogTitle>
+              <DialogTitle>
+                {editingIndex !== null ? 'Edit User' : 'Add New User'}
+              </DialogTitle>
               <DialogDescription>
-                {editingIndex !== null ? 'Update the user details' : 'Enter the details of the new user'}
+                {editingIndex !== null
+                  ? 'Update the user details'
+                  : 'Enter the details of the new user'}
               </DialogDescription>
             </DialogHeader>
 
@@ -327,6 +326,7 @@ export default function AddUserTable() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-2">
+                      {/* shadcn Calendar */}
                       <Calendar
                         mode="single"
                         selected={startDate}
