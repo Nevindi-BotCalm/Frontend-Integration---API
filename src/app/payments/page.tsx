@@ -58,7 +58,7 @@ export default function DemoPage() {
         {/* Header Section */}
         <div className="mb-8 sm:mb-12">
           <div className="mb-4 flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-3 shadow-lg">
+        
               <Database className="h-8 w-8 text-white" />
             </div>
 
@@ -132,6 +132,6 @@ export default function DemoPage() {
           </div>
         </div>
       </div>
-    </div>
+
   );
 }

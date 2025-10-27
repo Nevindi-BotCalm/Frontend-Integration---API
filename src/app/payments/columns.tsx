@@ -2,7 +2,6 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal } from "lucide-react"
-import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -12,8 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
 import { Checkbox } from "@/components/ui/checkbox"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 
 export type User = {
   id: number
@@ -78,52 +77,32 @@ export const columns: ColumnDef<User>[] = [
   
   {
     accessorKey: "firstName",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          First Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="First Name" />
+    ),
   },
   {
     accessorKey: "lastName",
-    header: "Last Name",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Last Name" />
+    ),
   },
   {
     accessorKey: "email",
-     header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Email
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Email" />
+    ),
   },
   {
     accessorKey: "age",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Age
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Age" />
+    ),
   },
   {
     accessorKey: "phone",
-    header: "Phone",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Phone" />
+    ),
   },
 ]
