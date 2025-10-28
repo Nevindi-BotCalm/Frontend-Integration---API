@@ -46,7 +46,7 @@ export default function DemoPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm mt-[-170px]">
       {/* Animated Background Elements */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="animate-blob absolute top-20 left-10 h-72 w-72 rounded-full bg-blue-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
@@ -58,17 +58,16 @@ export default function DemoPage() {
         {/* Header Section */}
         <div className="mb-8 sm:mb-12">
           <div className="mb-4 flex items-center gap-3">
-        
-              <Database className="h-8 w-8 text-white" />
-            </div>
-
-            <h1 className="text-5xl font-bold text-slate-800">
-              User Dashboard
-            </h1>
+            <Database className="h-8 w-8 text-white" />
           </div>
 
-          {/* Stats Cards */}
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* <h1 className="text-5xl font-bold text-slate-800">
+              User Dashboard
+            </h1> */}
+        </div>
+
+        {/* Stats Cards */}
+        {/* <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
               {
                 title: 'Total Users',
@@ -104,34 +103,31 @@ export default function DemoPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-        {/* Data Table Section */}
-        <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm">
-          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6">
-            <h2 className="flex items-center gap-2 text-2xl font-semibold text-slate-800">
-              <Users className="h-6 w-6 text-blue-600" />
-              User Directory
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Browse and manage all registered users
-            </p>
-          </div>
 
-          <div className="p-6 px-12">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
-                <p className="mt-4 font-medium text-slate-600">
-                  Loading user data...
-                </p>
-              </div>
-            ) : (
-              <DataTable columns={columns} data={data} />
-            )}
-          </div>
+          </div> */}
+      </div>
+      {/* Data Table Section */}
+      <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6">
+          <h2 className="flex items-center gap-2 text-2xl font-semibold text-slate-800">
+            <Users className="h-6 w-6 text-black" />
+            User Directory
+          </h2>
+        </div>
+
+        <div className="p-6 px-12">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
+              <p className="mt-4 font-medium text-slate-600">
+                Loading user data...
+              </p>
+            </div>
+          ) : (
+            <DataTable columns={columns} data={data} />
+          )}
         </div>
       </div>
-
+    </div>
   );
 }

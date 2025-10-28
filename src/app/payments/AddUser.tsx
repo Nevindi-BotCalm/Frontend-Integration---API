@@ -88,6 +88,7 @@
 // }
 
 import { useState } from 'react';
+import { Users, CheckCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '@/store/userStore';
 import { z } from 'zod';
@@ -127,64 +128,121 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Calendar } from '@/components/ui/calendar';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { CalendarIcon, Edit, Trash2, MoreHorizontal, ArrowUpDown } from 'lucide-react';
+  Edit,
+  MoreHorizontal,
+  ArrowUpDown,
+  Eye,
+} from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTableColumnHeader } from '@/components/data-table-column-header';
 
 {
-  /* Add User Table */
+  /* User Table */
 }
 export default function AddUserTable() {
   const { users, addUser, updateUser, deleteUser } = useUserStore();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewingUser, setViewingUser] = useState<any>(null);
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
-  const [role, setRole] = useState<string>('User');
+  const [gender, setGender] = useState<string>('Male');
   const [department, setDepartment] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
   const [isActive, setIsActive] = useState<boolean>(true);
-  const [startDate, setStartDate] = useState<Date>();
+  const [birthday, setBirthday] = useState<Date>();
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const [showNotification, setShowNotification] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<string>('');
+  const [showDeleteNotification, setShowDeleteNotification] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
 
   {
     /* Add User Dialog */
   }
+
+  const validateField = (field: string, value: any) => {
+    const schemas = {
+      name: z.string().min(2, 'Name must be at least 2 characters'),
+      email: z.string().email('Please enter a valid email'),
+      gender: z.string().min(1, 'Gender is required'),
+      department: z.string().min(1, 'Department is required'),
+      phone: z.string().min(10, 'Phone must be at least 10 characters'),
+      birthday: z.date(),
+    };
+
+    try {
+      schemas[field as keyof typeof schemas].parse(value);
+      setFieldErrors((prev) => ({ ...prev, [field]: '' }));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          [field]: error.issues[0].message,
+        }));
+      }
+    }
+  };
+
   const userSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Please enter a valid email'),
-    role: z.string().min(1, 'Role is required'),
+    gender: z.string().min(1, 'Gender is required'),
     department: z.string().min(1, 'Department is required'),
     phone: z.string().min(10, 'Phone must be at least 10 characters'),
-    startDate: z.date(),
+    birthday: z.date(),
   });
+
   {
     /* Users Table */
   }
+
   const handleEdit = (index: number) => {
     const user = users[index];
     setName(user.name);
     setEmail(user.email);
-    setRole(user.role);
+    setGender(user.gender);
     setDepartment(user.department);
     setPhone(user.phone);
     setIsActive(user.isActive);
-    setStartDate(new Date(user.startDate));
+    setBirthday(new Date(user.startDate));
     setEditingIndex(index);
     setDialogOpen(true);
   };
 
   const handleDelete = (index: number) => {
-    deleteUser(index);
+    setUserToDelete(index);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (userToDelete !== null) {
+      deleteUser(userToDelete);
+      setDeleteMessage('User deleted successfully!');
+      setShowDeleteNotification(true);
+      
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        setShowDeleteNotification(false);
+        setDeleteMessage('');
+      }, 3000);
+    }
+    setDeleteDialogOpen(false);
+    setUserToDelete(null);
+  };
+
+  const handleView = (index: number) => {
+    setViewingUser(users[index]);
+    setViewDialogOpen(true);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -207,7 +265,11 @@ export default function AddUserTable() {
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === 'asc'
+    ) {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
@@ -223,40 +285,53 @@ export default function AddUserTable() {
     return 0;
   });
 
-  const handleSubmit = (closeDialog: () => void) => {
-    if (!startDate) {
-      setError('Start date is required');
+  const handleSubmit = () => {
+    // Progressive validation - check fields in order
+    if (!name || name.length < 2) {
+      setError('Name is required and must be at least 2 characters');
       setSuccess('');
       return;
     }
-    {
-      /* Error handling */
+    if (!email) {
+      setError('Email is required');
+      setSuccess('');
+      return;
     }
-    try {
-      userSchema.parse({
-        name,
-        email,
-        role,
-        department,
-        phone,
-        startDate,
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setError(error.issues[0].message);
-        setSuccess('');
-        return;
-      }
+    if (!z.string().email().safeParse(email).success) {
+      setError('Please enter a valid email');
+      setSuccess('');
+      return;
+    }
+    if (!gender) {
+      setError('Gender is required');
+      setSuccess('');
+      return;
+    }
+    if (!department) {
+      setError('Department is required');
+      setSuccess('');
+      return;
+    }
+    if (!phone || phone.length < 10) {
+      setError('Phone is required and must be at least 10 characters');
+      setSuccess('');
+      return;
+    }
+    if (!birthday) {
+      setError('Birthday is required');
+      setSuccess('');
+      return;
     }
 
+    // If validation passes, proceed with submission
     const userData = {
       name,
       email,
-      role,
+      gender,
       department,
       phone,
       isActive,
-      startDate: startDate ? format(startDate, 'yyyy-MM-dd') : '',
+      startDate: birthday ? format(birthday, 'yyyy-MM-dd') : '',
     };
 
     if (editingIndex !== null) {
@@ -265,302 +340,452 @@ export default function AddUserTable() {
     } else {
       addUser(userData);
     }
+    
+    // Clear form and close dialog only on success
     setName('');
     setEmail('');
-    setRole('User');
+    setGender('Male');
     setDepartment('');
     setPhone('');
     setIsActive(true);
-    setStartDate(undefined);
+    setBirthday(undefined);
     setError('');
-    setSuccess(
-      editingIndex !== null
-        ? 'User updated successfully!'
-        : 'User added successfully!'
-    );
+    setFieldErrors({});
+    
+    const successMessage = editingIndex !== null
+      ? 'User updated successfully!'
+      : 'User added successfully!';
+    
+    setSuccess(successMessage);
+    setShowNotification(true);
     setDialogOpen(false);
-    closeDialog();
+    
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      setShowNotification(false);
+      setSuccess('');
+    }, 3000);
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Success Notification */}
+      {showNotification && success && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-right-full">
+          <CheckCircle className="h-5 w-5" />
+          <span>{success}</span>
+        </div>
+      )}
+      
+      {/* Delete Notification */}
+      {showDeleteNotification && deleteMessage && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-right-full">
+          <Trash2 className="h-5 w-5" />
+          <span>{deleteMessage}</span>
+        </div>
+      )}
       {/* Add User Dialog */}
-<div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm">
-<div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6"></div>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="ml-10">Add User</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingIndex !== null ? 'Edit User' : 'Add New User'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingIndex !== null
-                ? 'Update the user details'
-                : 'Enter the details of the new user'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Full Name</Label>
-                <Input
-                  placeholder="Enter full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Email Address</Label>
-                <Input
-                  placeholder="user@example.com"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Role</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="User">User</SelectItem>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="Developer">Developer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Department</Label>
-                <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Engineering">Engineering</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                    <SelectItem value="Sales">Sales</SelectItem>
-                    <SelectItem value="HR">Human Resources</SelectItem>
-                    <SelectItem value="Finance">Finance</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Phone Number</Label>
-                <Input
-                  placeholder="+1 (555) 123-4567"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="h-9 w-full justify-start px-3 text-left text-sm font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-3 w-3" />
-                      {startDate
-                        ? format(startDate, 'MMM dd, yyyy')
-                        : 'Pick a date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-2">
-                    {/* shadcn Calendar */}
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={setStartDate}
-                      initialFocus
-                      className="rounded-md border-0 p-0"
-                      classNames={{
-                        months:
-                          'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-                        month: 'space-y-4',
-                        caption:
-                          'flex justify-center pt-1 relative items-center',
-                        caption_label: 'text-sm font-medium',
-                        nav: 'space-x-1 flex items-center',
-                        nav_button:
-                          'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
-                        nav_button_previous: 'absolute left-1',
-                        nav_button_next: 'absolute right-1',
-                        table: 'w-full border-collapse space-y-1',
-                        head_row: 'flex',
-                        head_cell:
-                          'text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]',
-                        row: 'flex w-full mt-2',
-                        cell: 'text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
-                        day: 'h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md',
-                        day_selected:
-                          'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
-                        day_today: 'bg-accent text-accent-foreground',
-                        day_outside: 'text-muted-foreground opacity-50',
-                        day_disabled: 'text-muted-foreground opacity-50',
-                        day_range_middle:
-                          'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                        day_hidden: 'invisible',
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="active"
-                checked={isActive}
-                onCheckedChange={(checked) => setIsActive(checked as boolean)}
-              />
-              <Label htmlFor="active">Active User</Label>
-            </div>
-
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            {success && <p className="text-sm text-green-500">{success}</p>}
+      <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6"></div>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (open) {
+            setSuccess('');
+            setError('');
+          }
+        }}>
+          <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6">
+            <h2 className="flex items-center gap-2 text-2xl font-semibold text-slate-800">
+              <Users className="h-6 w-6 text-black" />
+              Manualy Added User Directory
+            </h2>
           </div>
 
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button onClick={() => handleSubmit(() => {})}>
+          <div className="flex items-center gap-4">
+            <DialogTrigger asChild>
+              <Button className="ml-10">+ Add New User</Button>
+            </DialogTrigger>
+            
+            {selectedUsers.size > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Bulk Actions ({selectedUsers.size})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${selectedUsers.size} users?`)) {
+                      const count = selectedUsers.size;
+                      selectedUsers.forEach(index => deleteUser(index));
+                      setSelectedUsers(new Set());
+                      setDeleteMessage(`${count} users deleted successfully!`);
+                      setShowDeleteNotification(true);
+                      
+                      // Hide notification after 3 seconds
+                      setTimeout(() => {
+                        setShowDeleteNotification(false);
+                        setDeleteMessage('');
+                      }, 3000);
+                    }
+                  }}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Selected
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    navigator.clipboard.writeText(
+                      Array.from(selectedUsers).map(index => users[index].email).join(', ')
+                    );
+                  }}>
+                    Copy Emails
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingIndex !== null ? 'Edit User' : 'Add New User'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingIndex !== null
+                  ? 'Update the user details'
+                  : 'Enter the details of the new user'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Full Name</Label>
+                  <Input
+                    placeholder="Enter full name"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      validateField('name', e.target.value);
+                    }}
+                  />
+                  {fieldErrors.name && (
+                    <p className="text-sm text-red-500">{fieldErrors.name}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Email Address</Label>
+                  <Input
+                    placeholder="user@example.com"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      validateField('email', e.target.value);
+                    }}
+                  />
+                  {fieldErrors.email && (
+                    <p className="text-sm text-red-500">{fieldErrors.email}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Gender</Label>
+                  <Select
+                    value={gender}
+                    onValueChange={(value) => {
+                      setGender(value);
+                      validateField('gender', value);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {fieldErrors.gender && (
+                    <p className="text-sm text-red-500">{fieldErrors.gender}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Department</Label>
+                  <Select
+                    value={department}
+                    onValueChange={(value) => {
+                      setDepartment(value);
+                      validateField('department', value);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Engineering">Engineering</SelectItem>
+                      <SelectItem value="Marketing">Marketing</SelectItem>
+                      <SelectItem value="Sales">Sales</SelectItem>
+                      <SelectItem value="HR">Human Resources</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {fieldErrors.department && (
+                    <p className="text-sm text-red-500">
+                      {fieldErrors.department}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Phone Number</Label>
+                  <Input
+                    placeholder="+1 (555) 123-4567"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      validateField('phone', e.target.value);
+                    }}
+                  />
+                  {fieldErrors.phone && (
+                    <p className="text-sm text-red-500">{fieldErrors.phone}</p>
+                  )}
+                </div>
+                <div>
+                  <Label>Birthday</Label>
+                  <Input
+                    type="date"
+                    value={birthday ? format(birthday, 'yyyy-MM-dd') : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : undefined;
+                      setBirthday(date);
+                      if (date) validateField('birthday', date);
+                    }}
+                  />
+                  {fieldErrors.birthday && (
+                    <p className="text-sm text-red-500">
+                      {fieldErrors.birthday}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="active"
+                  checked={isActive}
+                  onCheckedChange={(checked) => setIsActive(checked as boolean)}
+                />
+                <Label htmlFor="active">Active User</Label>
+              </div>
+
+              {error && <p className="text-sm text-red-500">{error}</p>}
+              {success && <p className="text-sm text-green-500">{success}</p>}
+            </div>
+
+            <DialogFooter>
+              <Button onClick={handleSubmit}>
                 {editingIndex !== null ? 'Update' : 'Submit'}
               </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      {/* Users Table */}
-      <div className="mt-6 px-6">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <Checkbox
-                  checked={selectedUsers.size === users.length && users.length > 0}
-                  onCheckedChange={handleSelectAll}
-                  aria-label="Select all"
-                />
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('name')}
-                  className="h-8 p-0 font-medium"
-                >
-                  Name
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('email')}
-                  className="h-8 p-0 font-medium"
-                >
-                  Email
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('role')}
-                  className="h-8 p-0 font-medium"
-                >
-                  Role
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleSort('department')}
-                  className="h-8 p-0 font-medium"
-                >
-                  Department
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              </TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+        {/* View User Dialog */}
+        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>User Details</DialogTitle>
+            </DialogHeader>
+            {viewingUser && (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Name:</Label> {viewingUser.name}
+                  </div>
+                  <div>
+                    <Label>Email:</Label> {viewingUser.email}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Gender:</Label> {viewingUser.gender}
+                  </div>
+                  <div>
+                    <Label>Department:</Label> {viewingUser.department}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Phone:</Label> {viewingUser.phone}
+                  </div>
+                  <div>
+                    <Label>Birthday:</Label> {viewingUser.startDate}
+                  </div>
+                </div>
+                <div>
+                  <Label>Status:</Label>{' '}
+                  {viewingUser.isActive ? 'Active' : 'Inactive'}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
-          <TableBody>
-            {sortedUsers.map((user, index) => (
-              <TableRow key={index}>
-                <TableCell>
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Delete</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this user? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                Yes, Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Users Table */}
+        <div className="mt-6 px-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
                   <Checkbox
-                    checked={selectedUsers.has(index)}
-                    onCheckedChange={(checked) => handleSelectUser(index, checked as boolean)}
-                    aria-label="Select row"
+                    checked={
+                      selectedUsers.size === users.length && users.length > 0
+                    }
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all"
                   />
-                </TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.department}</TableCell>
-                <TableCell>{user.phone}</TableCell>
-                <TableCell>
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs ${
-                      user.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('name')}
+                    className="h-8 p-0 font-medium"
                   >
-                    {user.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </TableCell>
-                <TableCell>{user.startDate}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.email)}>
-                        Copy email
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleEdit(index)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit user
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(index)} className="text-red-600">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete user
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                    Name
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('email')}
+                    className="h-8 p-0 font-medium"
+                  >
+                    Email
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('gender')}
+                    className="h-8 p-0 font-medium"
+                  >
+                    Gender
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleSort('department')}
+                    className="h-8 p-0 font-medium"
+                  >
+                    Department
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Birthday</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+
+            <TableBody>
+              {sortedUsers.map((user, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedUsers.has(index)}
+                      onCheckedChange={(checked) =>
+                        handleSelectUser(index, checked as boolean)
+                      }
+                      aria-label="Select row"
+                    />
+                  </TableCell>
+                  <TableCell>{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.gender}</TableCell>
+                  <TableCell>{user.department}</TableCell>
+                  <TableCell>{user.phone}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs ${
+                        user.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {user.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </TableCell>
+                  <TableCell>{user.startDate}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleView(index)}
+                        className="h-8 px-2"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(index)}
+                        className="h-8 px-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(index)}
+                        className="h-8 px-2 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="text-muted-foreground mt-4 text-sm">
+            {selectedUsers.size} of {users.length} users selected
+          </div>
+        </div>
       </div>
-    </div>
     </div>
   );
 }
