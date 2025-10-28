@@ -24,7 +24,6 @@ export type User = {
 }
 
 export const columns: ColumnDef<User>[] = [
-
     {
     id: "select",
     header: ({ table }) => (

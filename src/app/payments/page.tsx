@@ -23,7 +23,7 @@
 //   );
 // }
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { columns, User } from './columns';
 import { DataTable } from './data-table';
 import { Users, Database } from 'lucide-react';
@@ -35,15 +35,22 @@ async function getData(): Promise<User[]> {
 }
 
 export default function DemoPage() {
-  const [data, setData] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data = [], isLoading, error } = useQuery({
+    queryKey: ['users'],
+    queryFn: getData,
+  });
 
-  useEffect(() => {
-    getData().then((users) => {
-      setData(users);
-      setLoading(false);
-    });
-  }, []);
+ 
+// const [data, setData] = useState<User[]>([]);
+// const [loading, setLoading] = useState(true);
+
+// useEffect(() => {
+//   getData().then((users) => {
+//     setData(users);
+//     setLoading(false);
+//   });
+// }, []);
+
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm mt-[-170px]">
@@ -116,12 +123,16 @@ export default function DemoPage() {
         </div>
 
         <div className="p-6 px-12">
-          {loading ? (
+          {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
               <p className="mt-4 font-medium text-slate-600">
                 Loading user data...
               </p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <p className="text-red-600 font-medium">Error loading data</p>
             </div>
           ) : (
             <DataTable columns={columns} data={data} />

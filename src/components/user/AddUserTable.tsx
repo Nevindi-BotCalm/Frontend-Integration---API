@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DialogTrigger } from '@/components/ui/dialog';
@@ -9,6 +9,7 @@ import { UserNotifications } from './UserNotifications';
 import { UserDeleteDialog } from './UserDeleteDialog';
 import { UserViewDialog } from './UserViewDialog';
 import { BulkActions } from './BulkActions';
+import { UndoNotification } from './UndoNotification';
 
 export default function AddUserTable() {
   const { users, addUser, updateUser, deleteUser } = useUserStore();
@@ -31,6 +32,10 @@ export default function AddUserTable() {
   const [showNotification, setShowNotification] = useState(false);
   const [showDeleteNotification, setShowDeleteNotification] = useState(false);
   const [showErrorNotification, setShowErrorNotification] = useState(false);
+  const [showUndoNotification, setShowUndoNotification] = useState(false);
+  const [undoCountdown, setUndoCountdown] = useState(5);
+  const [deletedUser, setDeletedUser] = useState<any>(null);
+  const [deletedUserIndex, setDeletedUserIndex] = useState<number | null>(null);
 
   const handleEdit = (index: number) => {
     setEditingIndex(index);
@@ -44,9 +49,15 @@ export default function AddUserTable() {
 
   const confirmDelete = () => {
     if (userToDelete !== null) {
+      const userToDeleteData = users[userToDelete];
+      setDeletedUser(userToDeleteData);
+      setDeletedUserIndex(userToDelete);
+      
       deleteUser(userToDelete);
       setDeleteMessage('User deleted successfully!');
       setShowDeleteNotification(true);
+      setShowUndoNotification(true);
+      setUndoCountdown(5);
       
       setTimeout(() => {
         setShowDeleteNotification(false);
@@ -140,6 +151,42 @@ export default function AddUserTable() {
     }, 3000);
   };
 
+  // Undo countdown effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showUndoNotification && undoCountdown > 0) {
+      timer = setTimeout(() => {
+        setUndoCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (undoCountdown === 0) {
+      setShowUndoNotification(false);
+      setDeletedUser(null);
+      setDeletedUserIndex(null);
+    }
+    return () => clearTimeout(timer);
+  }, [showUndoNotification, undoCountdown]);
+
+  const handleUndo = () => {
+    if (deletedUser && deletedUserIndex !== null) {
+      addUser(deletedUser);
+      setShowUndoNotification(false);
+      setDeletedUser(null);
+      setDeletedUserIndex(null);
+      setSuccess('User restored successfully!');
+      setShowNotification(true);
+      setTimeout(() => {
+        setShowNotification(false);
+        setSuccess('');
+      }, 3000);
+    }
+  };
+
+  const handleUndoDismiss = () => {
+    setShowUndoNotification(false);
+    setDeletedUser(null);
+    setDeletedUserIndex(null);
+  };
+
   const editingUser = editingIndex !== null ? users[editingIndex] : undefined;
 
   return (
@@ -214,6 +261,14 @@ export default function AddUserTable() {
         open={viewDialogOpen}
         onOpenChange={setViewDialogOpen}
         user={viewingUser}
+      />
+
+      <UndoNotification
+        show={showUndoNotification}
+        message={`Deleted user: ${deletedUser?.name || 'User'}`}
+        countdown={undoCountdown}
+        onUndo={handleUndo}
+        onDismiss={handleUndoDismiss}
       />
     </div>
   );

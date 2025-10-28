@@ -5,3 +5,4 @@ export { UserNotifications } from './UserNotifications';
 export { UserDeleteDialog } from './UserDeleteDialog';
 export { UserViewDialog } from './UserViewDialog';
 export { BulkActions } from './BulkActions';
+export { UndoNotification } from './UndoNotification';

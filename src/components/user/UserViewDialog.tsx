@@ -58,8 +58,16 @@ export function UserViewDialog({
 }: UserViewDialogProps) {
   if (!user || !open) return null;
 
+
+  const infoItems = [
+    { icon: Mail, labelText: 'Email', valueText: user.email },
+    { icon: Phone, labelText: 'Phone', valueText: user.phone },
+    { icon: Users, labelText: 'Gender', valueText: user.gender },
+    { icon: Calendar, labelText: 'Birthday', valueText: user.startDate },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md">
       <div className="relative mx-4 w-full max-w-md overflow-hidden rounded-3xl border-2 border-black bg-white shadow-[0_20px_70px_-10px_rgba(0,0,0,0.5)]">
         {/* Header */}
         <div className="relative overflow-hidden bg-black px-6 py-10 text-white">
@@ -84,15 +92,16 @@ export function UserViewDialog({
 
         {/* Content */}
         <div className="space-y-3 bg-gradient-to-b from-gray-50 to-white p-6">
-          <InfoItem icon={Mail} labelText="Email" valueText={user.email} />
-          <InfoItem icon={Phone} labelText="Phone" valueText={user.phone} />
-          <InfoItem icon={Users} labelText="Gender" valueText={user.gender} />
-          <InfoItem
-            icon={Calendar}
-            labelText="Birthday"
-            valueText={user.startDate}
-          />
+          {infoItems.map((item, index) => (
+            <InfoItem
+              key={index}
+              icon={item.icon}
+              labelText={item.labelText}
+              valueText={item.valueText}
+            />
+          ))}
 
+          {/* Status */}
           <div className={baseCard + ' justify-between'}>
             <div className="flex items-center space-x-4">
               <div className={iconBox}>
