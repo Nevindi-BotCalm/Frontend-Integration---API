@@ -53,10 +53,10 @@ export default function DemoPage() {
 
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm mt-[-170px]">
+    <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm mt-20">
       {/* Animated Background Elements */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="animate-blob absolute top-20 left-10 h-72 w-72 rounded-full bg-blue-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-10 h-72 w-72 rounded-full  opacity-30"></div>
         <div className="animate-blob animation-delay-2000 absolute top-40 right-10 h-72 w-72 rounded-full bg-purple-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
         <div className="animate-blob animation-delay-4000 absolute -bottom-8 left-1/2 h-72 w-72 rounded-full bg-pink-200 opacity-30 mix-blend-multiply blur-xl filter"></div>
       </div>
@@ -114,7 +114,7 @@ export default function DemoPage() {
           </div> */}
       </div>
       {/* Data Table Section */}
-      <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm">
+      <div className="overflow-hidden rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-sm mt-[-180px]">
         <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 p-6">
           <h2 className="flex items-center gap-2 text-2xl font-semibold text-slate-800">
             <Users className="h-6 w-6 text-black" />
