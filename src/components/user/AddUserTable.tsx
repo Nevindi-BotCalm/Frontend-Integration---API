@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
+
 import { useUserStore } from '@/store/userStore';
 import { UserForm } from './UserForm';
 import { UserTable } from './UserTable';
