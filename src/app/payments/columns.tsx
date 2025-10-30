@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ColumnDef } from '@tanstack/react-table';
+import { MoreHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,27 +10,27 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DataTableColumnHeader } from "@/components/data-table-column-header"
+} from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTableColumnHeader } from '@/components/data-table-column-header';
 
 export type User = {
-  id: number
-  firstName: string
-  lastName: string
-  email: string
-  age: number
-  phone: string
-}
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  age: number;
+  phone: string;
+};
 
 export const columns: ColumnDef<User>[] = [
-    {
-    id: "select",
+  {
+    id: 'select',
     header: ({ table }) => (
       <Checkbox
         checked={
           table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+          (table.getIsSomePageRowsSelected() && 'indeterminate')
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
@@ -45,11 +45,11 @@ export const columns: ColumnDef<User>[] = [
     ),
   },
 
-   {
-    id: "actions",
+  {
+    id: 'actions',
     cell: ({ row }) => {
-      const user = row.original
- 
+      const user = row.original;
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -70,38 +70,38 @@ export const columns: ColumnDef<User>[] = [
             <DropdownMenuItem>View details</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-  
+
   {
-    accessorKey: "firstName",
+    accessorKey: 'firstName',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="First Name" />
     ),
   },
   {
-    accessorKey: "lastName",
+    accessorKey: 'lastName',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Last Name" />
     ),
   },
   {
-    accessorKey: "email",
+    accessorKey: 'email',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Email" />
     ),
   },
   {
-    accessorKey: "age",
+    accessorKey: 'age',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Age" />
     ),
   },
   {
-    accessorKey: "phone",
+    accessorKey: 'phone',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Phone" />
     ),
   },
-]
+];

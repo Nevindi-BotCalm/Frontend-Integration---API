@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useState } from 'react';
 
 import {
   ColumnDef,
@@ -25,7 +26,8 @@ import {
 } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { SearchBox } from '@/components/ui/search-box';
+import { Loading } from '@/components/ui/loading';
 
 import {
   DropdownMenu,
@@ -53,6 +55,7 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>({});
 
   const [rowSelection, setRowSelection] = React.useState({});
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const table = useReactTable({
     data,
@@ -79,12 +82,19 @@ export function DataTable<TData, TValue>({
   return (
     <div>
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            table.getColumn('email')?.setFilterValue(event.target.value)
+        <SearchBox
+          placeholder="Search by name..."
+          value={
+            (table.getColumn('firstName')?.getFilterValue() as string) ?? ''
           }
+          onChange={(value) => {
+            setSearchLoading(true);
+            setTimeout(() => {
+              table.getColumn('firstName')?.setFilterValue(value);
+              setSearchLoading(false);
+            }, 300);
+          }}
+          loading={searchLoading}
           className="max-w-sm"
         />
 
@@ -115,9 +125,19 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader>
+      <div className="relative h-[calc(100vh-280px)] overflow-hidden overflow-y-auto rounded-md border">
+        {searchLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <Loading size="sm" />
+              <span className="text-muted-foreground text-sm">
+                Searching...
+              </span>
+            </div>
+          </div>
+        )}
+        <Table className="relative">
+          <TableHeader className="sticky top-0 z-20 bg-white">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -167,8 +187,8 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between py-4">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+        <div className="text-muted-foreground text-sm">
+          {table.getFilteredSelectedRowModel().rows.length} of{' '}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="flex items-center space-x-6">
@@ -177,7 +197,7 @@ export function DataTable<TData, TValue>({
             <select
               value={table.getState().pagination.pageSize}
               onChange={(e) => table.setPageSize(Number(e.target.value))}
-              className="h-8 w-[70px] rounded border border-input bg-background px-3 py-1 text-sm"
+              className="border-input bg-background h-8 w-[70px] rounded border px-3 py-1 text-sm"
               aria-label="Rows per page"
             >
               {[10, 20, 30, 40, 50].map((pageSize) => (

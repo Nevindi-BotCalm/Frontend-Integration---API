@@ -20,17 +20,24 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { User } from '@/store/userStore';
 
 interface UserFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingUser?: any;
-  onSubmit: (userData: any) => void;
+  editingUser?: User;
+  onSubmit: (userData: User) => void;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 }
 
-export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess, onError }: UserFormProps) {
+export function UserForm({
+  open,
+  onOpenChange,
+  editingUser,
+  onSubmit,
+  onSuccess,
+}: UserFormProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [gender, setGender] = useState('Male');
@@ -61,7 +68,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
     setFieldErrors({});
   }, [editingUser, open]);
 
-  const validateField = (field: string, value: any) => {
+  const validateField = (field: string, value: string | Date) => {
     const schemas = {
       name: z.string().min(2, 'Name must be at least 2 characters'),
       email: z.string().email('Please enter a valid email'),
@@ -160,7 +167,9 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
 
     onSubmit(userData);
     onOpenChange(false);
-    onSuccess(editingUser ? 'User updated successfully!' : 'User added successfully!');
+    onSuccess(
+      editingUser ? 'User updated successfully!' : 'User added successfully!'
+    );
   };
 
   return (
@@ -176,7 +185,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
               : 'Enter the details of the new user'}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -190,7 +199,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
                 }}
               />
               {fieldErrors.name && (
-                <p className="text-sm text-red-500 mt-1">{fieldErrors.name}</p>
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.name}</p>
               )}
             </div>
             <div>
@@ -205,7 +214,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
                 }}
               />
               {fieldErrors.email && (
-                <p className="text-sm text-red-500 mt-1">{fieldErrors.email}</p>
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.email}</p>
               )}
             </div>
           </div>
@@ -230,7 +239,9 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
                 </SelectContent>
               </Select>
               {fieldErrors.gender && (
-                <p className="text-sm text-red-500 mt-1">{fieldErrors.gender}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {fieldErrors.gender}
+                </p>
               )}
             </div>
             <div>
@@ -254,7 +265,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
                 </SelectContent>
               </Select>
               {fieldErrors.department && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="mt-1 text-sm text-red-500">
                   {fieldErrors.department}
                 </p>
               )}
@@ -274,7 +285,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
                 }}
               />
               {fieldErrors.phone && (
-                <p className="text-sm text-red-500 mt-1">{fieldErrors.phone}</p>
+                <p className="mt-1 text-sm text-red-500">{fieldErrors.phone}</p>
               )}
             </div>
             <div>
@@ -283,13 +294,15 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
                 type="date"
                 value={birthday ? format(birthday, 'yyyy-MM-dd') : ''}
                 onChange={(e) => {
-                  const date = e.target.value ? new Date(e.target.value) : undefined;
+                  const date = e.target.value
+                    ? new Date(e.target.value)
+                    : undefined;
                   setBirthday(date);
                   if (date) validateField('birthday', date);
                 }}
               />
               {fieldErrors.birthday && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="mt-1 text-sm text-red-500">
                   {fieldErrors.birthday}
                 </p>
               )}
@@ -305,7 +318,7 @@ export function UserForm({ open, onOpenChange, editingUser, onSubmit, onSuccess,
             <Label htmlFor="active">Active User</Label>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button onClick={handleSubmit}>
             {editingUser ? 'Update' : 'Submit'}

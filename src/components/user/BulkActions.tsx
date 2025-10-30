@@ -8,15 +8,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { User } from '@/store/userStore';
 
 interface BulkActionsProps {
   selectedUsers: Set<number>;
-  users: any[];
+  users: User[];
   onBulkDelete: () => void;
   onCopyEmails: () => void;
 }
 
-export function BulkActions({ selectedUsers, users, onBulkDelete, onCopyEmails }: BulkActionsProps) {
+export function BulkActions({
+  selectedUsers,
+  onBulkDelete,
+  onCopyEmails,
+}: BulkActionsProps) {
   if (selectedUsers.size === 0) return null;
 
   return (
@@ -33,9 +38,7 @@ export function BulkActions({ selectedUsers, users, onBulkDelete, onCopyEmails }
           <Trash2 className="mr-2 h-4 w-4" />
           Delete Selected
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onCopyEmails}>
-          Copy Emails
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onCopyEmails}>Copy Emails</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

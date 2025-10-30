@@ -1,4 +1,3 @@
-
 import { Undo2, X } from 'lucide-react';
 
 interface UndoNotificationProps {

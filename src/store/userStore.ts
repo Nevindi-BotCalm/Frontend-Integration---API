@@ -23,12 +23,14 @@ export const useUserStore = create<UserStore>()(
     (set) => ({
       users: [],
       addUser: (user) => set((state) => ({ users: [...state.users, user] })),
-      updateUser: (index, user) => set((state) => ({
-        users: state.users.map((u, i) => i === index ? user : u)
-      })),
-      deleteUser: (index) => set((state) => ({
-        users: state.users.filter((_, i) => i !== index)
-      })),
+      updateUser: (index, user) =>
+        set((state) => ({
+          users: state.users.map((u, i) => (i === index ? user : u)),
+        })),
+      deleteUser: (index) =>
+        set((state) => ({
+          users: state.users.filter((_, i) => i !== index),
+        })),
     }),
     {
       name: 'user-storage',

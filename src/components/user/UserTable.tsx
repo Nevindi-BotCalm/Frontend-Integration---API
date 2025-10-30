@@ -1,6 +1,7 @@
 import { Edit, Eye, Trash2, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SearchBox } from '@/components/ui/search-box';
 import {
   Table,
   TableBody,
@@ -9,9 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { User } from '@/store/userStore';
 
 interface UserTableProps {
-  users: any[];
+  users: User[];
   selectedUsers: Set<number>;
   sortConfig: { key: string; direction: 'asc' | 'desc' } | null;
   onEdit: (index: number) => void;
@@ -20,19 +22,29 @@ interface UserTableProps {
   onSelectAll: (checked: boolean) => void;
   onSelectUser: (index: number, checked: boolean) => void;
   onSort: (key: string) => void;
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
+  searchLoading?: boolean;
 }
 
-export function UserTable({ 
-  users, 
-  selectedUsers, 
-  sortConfig, 
-  onEdit, 
-  onDelete, 
-  onView, 
-  onSelectAll, 
-  onSelectUser, 
-  onSort 
+export function UserTable({
+  users,
+  selectedUsers,
+  sortConfig,
+  onEdit,
+  onDelete,
+  onView,
+  onSelectAll,
+  onSelectUser,
+  onSort,
+  searchTerm = '',
+  onSearchChange,
+  searchLoading = false,
 }: UserTableProps) {
+  // Calculate row height (adjust these values based on your actual row heights)
+  const rowHeight = 50; // approximate height of each row in pixels
+  const headerHeight = 56; // approximate height of the header
+  const tableHeight = rowHeight * 3 + headerHeight; // Show 3 rows + header
   const sortedUsers = [...users].sort((a, b) => {
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
@@ -45,12 +57,25 @@ export function UserTable({
 
   return (
     <>
-      <Table>
+      {onSearchChange && (
+        <div className="mb-4">
+          <SearchBox
+            placeholder="Search by name..."
+            value={searchTerm}
+            onChange={onSearchChange}
+            loading={searchLoading}
+            className="max-w-sm"
+          />
+        </div>
+      )}
+      <Table maxHeight={`${tableHeight}px`}>
         <TableHeader>
           <TableRow>
             <TableHead className="w-12">
               <Checkbox
-                checked={selectedUsers.size === users.length && users.length > 0}
+                checked={
+                  selectedUsers.size === users.length && users.length > 0
+                }
                 onCheckedChange={onSelectAll}
                 aria-label="Select all"
               />
