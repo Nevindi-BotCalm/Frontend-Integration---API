@@ -1,31 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { SearchBox } from '@/components/ui/search-box';
 import { Users } from 'lucide-react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/react-table';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Loading } from '@/components/ui/loading';
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
 import { useUserStore, User } from '@/store/userStore';
 import { UserForm } from './UserForm';
-import { UserTable } from './UserTable';
 import { UserNotifications } from './UserNotifications';
 import { UserDeleteDialog } from './UserDeleteDialog';
 import { UserViewDialog } from './UserViewDialog';
 import { BulkActions } from './BulkActions';
 import { UndoNotification } from './UndoNotification';
+import { getColumns } from './columns';
+import { DataTablePagination } from '@/components/DataTablePagination';
 
 export default function AddUserTable() {
   const { users, addUser, updateUser, deleteUser } = useUserStore();
@@ -35,11 +42,6 @@ export default function AddUserTable() {
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
-  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: 'asc' | 'desc';
-  } | null>(null);
 
   // Notification states
   const [success, setSuccess] = useState<string>('');
@@ -54,8 +56,11 @@ export default function AddUserTable() {
   const [deletedUserIndex, setDeletedUserIndex] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchLoading, setSearchLoading] = useState(false);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = useState({});
 
   const handleEdit = (index: number) => {
     setEditingIndex(index);
@@ -93,43 +98,39 @@ export default function AddUserTable() {
     setViewDialogOpen(true);
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedUsers(new Set(users.map((_, index) => index)));
-    } else {
-      setSelectedUsers(new Set());
-    }
-  };
+  const columns = useMemo(() => getColumns(handleEdit, handleDelete, handleView), []);
 
-  const handleSelectUser = (index: number, checked: boolean) => {
-    const newSelected = new Set(selectedUsers);
-    if (checked) {
-      newSelected.add(index);
-    } else {
-      newSelected.delete(index);
-    }
-    setSelectedUsers(newSelected);
-  };
+  const table = useReactTable({
+    data: users,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  });
 
-  const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (
-      sortConfig &&
-      sortConfig.key === key &&
-      sortConfig.direction === 'asc'
-    ) {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
+  useEffect(() => {
+    table.setGlobalFilter(searchTerm);
+  }, [searchTerm, table]);
 
   const handleBulkDelete = () => {
+    const selectedIndices = Object.keys(rowSelection).map(Number);
     if (
-      confirm(`Are you sure you want to delete ${selectedUsers.size} users?`)
+      confirm(`Are you sure you want to delete ${selectedIndices.length} users?`)
     ) {
-      const count = selectedUsers.size;
-      selectedUsers.forEach((index) => deleteUser(index));
-      setSelectedUsers(new Set());
+      const count = selectedIndices.length;
+      selectedIndices.forEach((index) => deleteUser(index));
+      setRowSelection({});
       setDeleteMessage(`${count} users deleted successfully!`);
       setShowDeleteNotification(true);
 
@@ -141,8 +142,9 @@ export default function AddUserTable() {
   };
 
   const handleCopyEmails = () => {
+    const selectedIndices = Object.keys(rowSelection).map(Number);
     navigator.clipboard.writeText(
-      Array.from(selectedUsers)
+      selectedIndices
         .map((index) => users[index].email)
         .join(', ')
     );
@@ -222,20 +224,6 @@ export default function AddUserTable() {
     }, 300);
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.department?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const paginatedUsers = filteredUsers.slice(
-    pageIndex * pageSize,
-    (pageIndex + 1) * pageSize
-  );
-
-  const totalPages = Math.ceil(filteredUsers.length / pageSize);
-
   return (
     <div className="relative min-h-screen">
       <UserNotifications
@@ -261,18 +249,18 @@ export default function AddUserTable() {
           </Button>
 
           <BulkActions
-            selectedUsers={selectedUsers}
-            users={filteredUsers}
+            selectedUsers={new Set(Object.keys(rowSelection).map(Number))}
+            users={users}
             onBulkDelete={handleBulkDelete}
             onCopyEmails={handleCopyEmails}
           />
 
           <div className="ml-auto w-72">
-            <Input
-              type="search"
+            <SearchBox
               placeholder="Search users..."
               value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={handleSearchChange}
+              loading={searchLoading}
               className="w-full"
             />
           </div>
@@ -289,107 +277,59 @@ export default function AddUserTable() {
               </div>
             </div>
           )}
-          <UserTable
-            users={paginatedUsers}
-            selectedUsers={selectedUsers}
-            sortConfig={sortConfig}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onView={handleView}
-            onSelectAll={handleSelectAll}
-            onSelectUser={handleSelectUser}
-            onSort={handleSort}
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            searchLoading={searchLoading}
-          />
+          <div className="rounded-md border h-[calc(100vh-450px)] overflow-hidden overflow-y-auto">
+            <Table className="relative">
+              <TableHeader className="sticky top-0 z-10 bg-white">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && 'selected'}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      No results.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-          <div className="mt-4 flex flex-col gap-2 px-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <p>
-                Showing {pageIndex * pageSize + 1}-
-                {Math.min((pageIndex + 1) * pageSize, filteredUsers.length)} of{' '}
-                {filteredUsers.length} items
-              </p>
-              <div className="flex items-center space-x-2">
-                <p className="whitespace-nowrap">Rows per page</p>
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(value) => {
-                    setPageSize(Number(value));
-                    setPageIndex(0); // Reset to first page when changing page size
-                  }}
-                >
-                  <SelectTrigger className="h-8 w-[70px]">
-                    <SelectValue placeholder={pageSize} />
-                  </SelectTrigger>
-                  <SelectContent side="top">
-                    {[5, 10, 20, 30, 40, 50].map((size) => (
-                      <SelectItem key={size} value={size.toString()}>
-                        {size}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    size="default"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPageIndex((p) => Math.max(0, p - 1));
-                    }}
-                    aria-disabled={pageIndex === 0}
-                    className={
-                      pageIndex === 0 ? 'pointer-events-none opacity-50' : ''
-                    }
-                  />
-                </PaginationItem>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const start = Math.max(
-                    0,
-                    Math.min(pageIndex - 2, totalPages - 5)
-                  );
-                  const pageNum = start + i;
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPageIndex(pageNum);
-                        }}
-                        isActive={pageIndex === pageNum}
-                        size="default"
-                      >
-                        {pageNum + 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                <PaginationItem>
-                  <PaginationNext
-                    size="default"
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPageIndex((p) => Math.min(totalPages - 1, p + 1));
-                    }}
-                    aria-disabled={pageIndex === totalPages - 1}
-                    className={
-                      pageIndex === totalPages - 1
-                        ? 'pointer-events-none opacity-50'
-                        : ''
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+          <div className="py-4">
+            <DataTablePagination table={table} />
           </div>
         </div>
       </div>

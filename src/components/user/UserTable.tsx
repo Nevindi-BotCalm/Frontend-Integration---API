@@ -1,7 +1,7 @@
 import { Edit, Eye, Trash2, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SearchBox } from '@/components/ui/search-box';
+
 import {
   Table,
   TableBody,
@@ -37,14 +37,11 @@ export function UserTable({
   onSelectAll,
   onSelectUser,
   onSort,
-  searchTerm = '',
-  onSearchChange,
-  searchLoading = false,
 }: UserTableProps) {
   // Calculate row height (adjust these values based on your actual row heights)
   const rowHeight = 50; // approximate height of each row in pixels
   const headerHeight = 56; // approximate height of the header
-  const tableHeight = rowHeight * 3 + headerHeight; // Show 3 rows + header
+  const tableHeight = rowHeight * 6 + headerHeight; 
   const sortedUsers = [...users].sort((a, b) => {
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
@@ -57,17 +54,6 @@ export function UserTable({
 
   return (
     <>
-      {onSearchChange && (
-        <div className="mb-4">
-          <SearchBox
-            placeholder="Search by name..."
-            value={searchTerm}
-            onChange={onSearchChange}
-            loading={searchLoading}
-            className="max-w-sm"
-          />
-        </div>
-      )}
       <Table maxHeight={`${tableHeight}px`}>
         <TableHeader>
           <TableRow>

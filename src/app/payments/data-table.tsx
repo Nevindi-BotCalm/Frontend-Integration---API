@@ -26,8 +26,9 @@ import {
 } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
-import { SearchBox } from '@/components/ui/search-box';
+import { SearchBox } from '@/components/ui/customize-ui/search-box';
 import { Loading } from '@/components/ui/loading';
+import { DataTablePagination } from '@/components/DataTablePagination';
 
 import {
   DropdownMenu,
@@ -186,46 +187,9 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between py-4">
-        <div className="text-muted-foreground text-sm">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
-              className="border-input bg-background h-8 w-[70px] rounded border px-3 py-1 text-sm"
-              aria-label="Rows per page"
-            >
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+      {/*pagination */}
+      <div className="py-4">
+        <DataTablePagination table={table} />
       </div>
     </div>
   );
